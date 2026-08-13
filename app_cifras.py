@@ -3,12 +3,10 @@ import random
 
 # --- 1. LÓGICA MATEMÁTICA: GENERADORES ---
 def generar_partida_clasica():
-    # La baraja oficial de fichas del juego clásico
     fichas_disponibles = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 25, 50, 75, 100]
     return random.sample(fichas_disponibles, 6)
 
 def generar_partida_mas():
-    # Modo +: 6 números del 1 al 100 con la misma probabilidad
     return [random.randint(1, 100) for _ in range(6)]
 
 def construir_partida_con_fichas(fichas_iniciales):
@@ -160,7 +158,6 @@ with tab_juego:
     if 'partida_activa' not in st.session_state:
         st.session_state.partida_activa = False
 
-    # Creamos dos columnas para poner los dos botones uno al lado del otro
     col_btn1, col_btn2 = st.columns(2)
     
     with col_btn1:
@@ -172,8 +169,6 @@ with tab_juego:
             st.session_state.c = c
             st.session_state.resultado_exacto = resultado_exacto
             st.session_state.partida_activa = True
-            if c == 0:
-                st.balloons()
                 
     with col_btn2:
         if st.button("🔥 Modo +", type="secondary", use_container_width=True):
@@ -184,10 +179,12 @@ with tab_juego:
             st.session_state.c = c
             st.session_state.resultado_exacto = resultado_exacto
             st.session_state.partida_activa = True
-            if c == 0:
-                st.balloons()
 
+    # Si hay partida activa, evaluamos los globos fuera de los botones para evitar problemas de renderizado
     if st.session_state.partida_activa:
+        if st.session_state.c == 0:
+            st.balloons()
+
         st.divider()
         col1, col2 = st.columns(2)
         with col1:
@@ -290,4 +287,4 @@ with tab_resolutor:
                                 st.code(paso)
                                 
                     if len(soluciones_m) > 15:
-                        st.caption(f"... y {len(soluciones_m) - 15} combinaciones más que se han ocultado.")")
+                        st.caption(f"... y {len(soluciones_m) - 15} combinaciones más que se han ocultado.")
