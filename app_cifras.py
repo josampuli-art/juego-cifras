@@ -180,11 +180,7 @@ with tab_juego:
             st.session_state.resultado_exacto = resultado_exacto
             st.session_state.partida_activa = True
 
-    # Si hay partida activa, evaluamos los globos fuera de los botones para evitar problemas de renderizado
     if st.session_state.partida_activa:
-        if st.session_state.c == 0:
-            st.balloons()
-
         st.divider()
         col1, col2 = st.columns(2)
         with col1:
@@ -260,9 +256,6 @@ with tab_resolutor:
                 soluciones_m, aprox_m, diff_m, camino_m, exitos_m = resolver_cifras_motor(
                     numeros_manuales, objetivo_manual
                 )
-                
-            if soluciones_m:
-                st.balloons()
                 
             st.divider()
             st.subheader(f"📊 Resultados para conseguir el {objetivo_manual}")
