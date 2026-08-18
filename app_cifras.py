@@ -1,84 +1,68 @@
 import streamlit as st
 import random
 
-# --- 1. LÓGICA MATEMÁTICA: GENERADORES ---
-def generar_partida_clasica():
+# --- 1. LÓGICA MATEMÁTICA: GENERADOR ---
+def generar_partida_cifras():
     fichas_disponibles = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 25, 50, 75, 100]
-    return random.sample(fichas_disponibles, 6)
-
-def generar_partida_mas():
-    return [random.randint(1, 100) for _ in range(6)]
-
-def construir_partida_con_fichas(fichas_iniciales):
-    fichas_trabajo = fichas_iniciales.copy()
-    max_ficha = max(fichas_iniciales)
     
-    b = random.randint(3, 5)
-    operaciones_restantes = b
-    
-    historial_pasos = []
-    resultado_exacto = 0
-    
-    while operaciones_restantes > 0 and len(fichas_trabajo) >= 2:
-        idx1, idx2 = random.sample(range(len(fichas_trabajo)), 2)
-        n1 = fichas_trabajo[idx1]
-        n2 = fichas_trabajo[idx2]
-        
-        a = random.randint(1, 4)
-        operacion_valida = False
-        
-        if a == 1:
-            resultado = n1 + n2
-            paso_str = f"{n1} + {n2} = {resultado}"
-            operacion_valida = True
-        elif a == 2:
-            if n1 != n2:
-                mayor, menor = max(n1, n2), min(n1, n2)
-                resultado = mayor - menor
-                paso_str = f"{mayor} - {menor} = {resultado}"
-                operacion_valida = True
-        elif a == 3:
-            resultado = n1 * n2
-            paso_str = f"{n1} * {n2} = {resultado}"
-            operacion_valida = True
-        elif a == 4:
-            mayor, menor = max(n1, n2), min(n1, n2)
-            if menor > 1 and mayor % menor == 0:
-                resultado = mayor // menor
-                paso_str = f"{mayor} / {menor} = {resultado}"
-                operacion_valida = True
-        
-        if operacion_valida:
-            for idx in sorted([idx1, idx2], reverse=True):
-                fichas_trabajo.pop(idx)
-            fichas_trabajo.append(resultado)
-            historial_pasos.append(paso_str)
-            operaciones_restantes -= 1
-            resultado_exacto = resultado
-
-    if historial_pasos:
-        valores_c = list(range(-15, 16))
-        pesos = [0.05 / 30 if v != 0 else 0.95 for v in valores_c]
-        c = random.choices(valores_c, weights=pesos)[0]
-        objetivo_final = resultado_exacto + c
-        
-        if objetivo_final > max_ficha:
-            return fichas_iniciales, objetivo_final, historial_pasos, c, resultado_exacto
-    
-    return None
-
-def generar_partida_cifras(modo="clasico"):
     while True:
-        if modo == "clasico":
-            fichas_iniciales = generar_partida_clasica()
-        else:
-            fichas_iniciales = generar_partida_mas()
+        fichas_iniciales = random.sample(fichas_disponibles, 6)
+        fichas_trabajo = fichas_iniciales.copy()
+        max_ficha = max(fichas_iniciales)
+        
+        b = random.randint(3, 5)
+        operaciones_restantes = b
+        
+        historial_pasos = []
+        resultado_exacto = 0
+        
+        while operaciones_restantes > 0 and len(fichas_trabajo) >= 2:
+            idx1, idx2 = random.sample(range(len(fichas_trabajo)), 2)
+            n1 = fichas_trabajo[idx1]
+            n2 = fichas_trabajo[idx2]
             
-        resultado = construir_partida_con_fichas(fichas_iniciales)
-        if resultado is not None:
-            return resultado
+            a = random.randint(1, 4)
+            operacion_valida = False
+            
+            if a == 1:
+                resultado = n1 + n2
+                paso_str = f"{n1} + {n2} = {resultado}"
+                operacion_valida = True
+            elif a == 2:
+                if n1 != n2:
+                    mayor, menor = max(n1, n2), min(n1, n2)
+                    resultado = mayor - menor
+                    paso_str = f"{mayor} - {menor} = {resultado}"
+                    operacion_valida = True
+            elif a == 3:
+                resultado = n1 * n2
+                paso_str = f"{n1} * {n2} = {resultado}"
+                operacion_valida = True
+            elif a == 4:
+                mayor, menor = max(n1, n2), min(n1, n2)
+                if menor > 1 and mayor % menor == 0:
+                    resultado = mayor // menor
+                    paso_str = f"{mayor} / {menor} = {resultado}"
+                    operacion_valida = True
+            
+            if operacion_valida:
+                for idx in sorted([idx1, idx2], reverse=True):
+                    fichas_trabajo.pop(idx)
+                fichas_trabajo.append(resultado)
+                historial_pasos.append(paso_str)
+                operaciones_restantes -= 1
+                resultado_exacto = resultado
 
-# --- 2. LÓGICA MATEMÁTICA: RESOLVEDOR (Backtracking DFS) ---
+        if historial_pasos:
+            valores_c = list(range(-15, 16))
+            pesos = [0.05 / 30 if v != 0 else 0.95 for v in valores_c]
+            c = random.choices(valores_c, weights=pesos)[0]
+            objetivo_final = resultado_exacto + c
+            
+            if objetivo_final > max_ficha:
+                return fichas_iniciales, objetivo_final, historial_pasos, c, resultado_exacto
+
+# --- 2. LÓGICA MATEMÁTICA: RESOLVEDOR ---
 def resolver_cifras_motor(numeros_iniciales, objetivo):
     mejor_diferencia = float('inf')
     mejor_aproximacion = None
@@ -100,13 +84,10 @@ def resolver_cifras_motor(numeros_iniciales, objetivo):
 
                 operaciones = []
                 operaciones.append((mayor + menor, f"{mayor} + {menor} = {mayor + menor}"))
-                
                 if mayor > menor:
                     operaciones.append((mayor - menor, f"{mayor} - {menor} = {mayor - menor}"))
-                    
                 if menor > 1:
                     operaciones.append((mayor * menor, f"{mayor} * {menor} = {mayor * menor}"))
-                    
                 if menor > 1 and mayor % menor == 0:
                     operaciones.append((mayor // menor, f"{mayor} / {menor} = {mayor // menor}"))
 
@@ -140,10 +121,47 @@ def resolver_cifras_motor(numeros_iniciales, objetivo):
     
     return list(soluciones_encontradas), mejor_aproximacion, mejor_diferencia, mejor_camino, exitos_brutos
 
-
 # --- 3. INTERFAZ GRÁFICA (Streamlit) ---
 st.set_page_config(page_title="Juego de Cifras", page_icon="🔢", layout="centered")
 
+# ==========================================
+# 🧮 CALCULADORA LATERAL PLEGABLE
+# ==========================================
+with st.sidebar.expander("🧮 Calculadora de Ayuda", expanded=False):
+    st.write("Realiza tus operaciones auxiliares aquí:")
+    
+    # Campo de texto para que el usuario escriba su cuenta (ej: 25 + 10 * 2)
+    # Usamos session_state para poder borrar la cuenta después
+    if "calc_input" not in st.session_state:
+        st.session_state.calc_input = ""
+        
+    def limpiar_calculadora():
+        st.session_state.calc_input = ""
+        
+    cuenta = st.text_input("Introduce la operación:", value=st.session_state.calc_input, key="calc_input")
+    
+    col_c1, col_c2 = st.columns(2)
+    with col_c1:
+        if st.button("🟰 Calcular", use_container_width=True):
+            if cuenta:
+                try:
+                    # Sustituimos 'x' por '*' por si el usuario usa la letra x para multiplicar
+                    cuenta_limpia = cuenta.replace("x", "*").replace("X", "*")
+                    # eval evalúa matemáticamente el string
+                    resultado = eval(cuenta_limpia)
+                    st.success(f"**Resultado: {resultado}**")
+                except ZeroDivisionError:
+                    st.error("⚠️ Error: División por cero.")
+                except Exception:
+                    st.error("⚠️ Error: Operación no válida.")
+                    
+    with col_c2:
+        if st.button("🗑️ Borrar", on_click=limpiar_calculadora, use_container_width=True):
+            pass
+
+# ==========================================
+# CUERPO PRINCIPAL
+# ==========================================
 st.title("🔢 El Juego de Cifras")
 st.write("Generador y Resolutor con análisis combinatorio en profundidad.")
 
@@ -151,37 +169,22 @@ st.divider()
 
 tab_juego, tab_resolutor = st.tabs(["🎮 Modo Juego (Generador)", "🧠 Resolutor Manual"])
 
-# ==========================================
-# PESTAÑA 1: MODO JUEGO
-# ==========================================
+# --- PESTAÑA 1: MODO JUEGO ---
 with tab_juego:
     if 'partida_activa' not in st.session_state:
         st.session_state.partida_activa = False
 
-    col_btn1, col_btn2 = st.columns(2)
-    
-    with col_btn1:
-        if st.button("🎮 Modo Clásico", type="primary", use_container_width=True):
-            fichas, objetivo, pasos, c, resultado_exacto = generar_partida_cifras(modo="clasico")
-            st.session_state.fichas = fichas
-            st.session_state.objetivo = objetivo
-            st.session_state.pasos = pasos
-            st.session_state.c = c
-            st.session_state.resultado_exacto = resultado_exacto
-            st.session_state.partida_activa = True
-                
-    with col_btn2:
-        if st.button("🔥 Modo +", type="secondary", use_container_width=True):
-            fichas, objetivo, pasos, c, resultado_exacto = generar_partida_cifras(modo="mas")
-            st.session_state.fichas = fichas
-            st.session_state.objetivo = objetivo
-            st.session_state.pasos = pasos
-            st.session_state.c = c
-            st.session_state.resultado_exacto = resultado_exacto
-            st.session_state.partida_activa = True
+    if st.button("Generar nueva partida aleatoria", type="primary"):
+        fichas, objetivo, pasos, c, resultado_exacto = generar_partida_cifras()
+        
+        st.session_state.fichas = fichas
+        st.session_state.objetivo = objetivo
+        st.session_state.pasos = pasos
+        st.session_state.c = c
+        st.session_state.resultado_exacto = resultado_exacto
+        st.session_state.partida_activa = True
 
     if st.session_state.partida_activa:
-        st.divider()
         col1, col2 = st.columns(2)
         with col1:
             st.subheader("Tus 6 números:")
@@ -205,7 +208,7 @@ with tab_juego:
 
         with col_der:
             if st.button("Que la máquina calcule TODAS las soluciones 🧠", key="btn_motor_juego"):
-                with st.spinner("Explorando cientos de miles de ramas combinatorias..."):
+                with st.spinner("Explorando ramas combinatorias..."):
                     soluciones, mejor_aprox, mejor_diff, mejor_camino, exitos = resolver_cifras_motor(
                         st.session_state.fichas, st.session_state.objetivo
                     )
@@ -217,7 +220,7 @@ with tab_juego:
                         st.code(f"Paso {i}: {paso}")
                 else:
                     st.success(f"Se encontraron {len(soluciones)} formas únicas de operar.")
-                    st.write(f"Ramas del árbol que llegaron al resultado: {exitos}")
+                    st.write(f"Ramas exploradas con éxito: {exitos}")
                     max_mostrar = min(10, len(soluciones))
                     for idx, sol in enumerate(soluciones[:max_mostrar], 1):
                         with st.expander(f"Ver Opción {idx}"):
@@ -226,9 +229,7 @@ with tab_juego:
                     if len(soluciones) > 10:
                         st.caption(f"... y {len(soluciones) - 10} combinaciones más ocultas.")
 
-# ==========================================
-# PESTAÑA 2: RESOLUTOR MANUAL
-# ==========================================
+# --- PESTAÑA 2: RESOLUTOR MANUAL ---
 with tab_resolutor:
     st.subheader("Introduce tus propios números")
     st.write("Introduce 6 números naturales (enteros mayores que cero) y un número objetivo.")
@@ -250,13 +251,13 @@ with tab_resolutor:
         son_naturales = all(isinstance(n, int) and n > 0 for n in todos_los_numeros)
         
         if not son_naturales:
-            st.error("⚠️ Error: Todos los valores deben ser números naturales (enteros positivos mayores que 0). Por favor, revisa tu entrada.")
+            st.error("⚠️ Error: Todos los valores deben ser números naturales. Por favor, revisa tu entrada.")
         else:
             with st.spinner("Calculando todas las combinaciones posibles..."):
                 soluciones_m, aprox_m, diff_m, camino_m, exitos_m = resolver_cifras_motor(
                     numeros_manuales, objetivo_manual
                 )
-                
+            
             st.divider()
             st.subheader(f"📊 Resultados para conseguir el {objetivo_manual}")
             
@@ -267,17 +268,15 @@ with tab_resolutor:
                 for i, paso in enumerate(camino_m, 1):
                     st.code(f"Paso {i}: {paso}")
             else:
-                st.success(f"¡Análisis completado! Se encontraron {len(soluciones_m)} formas matemáticas únicas de operar.")
-                st.write(f"Ramas del árbol exploradas exitosamente: {exitos_m}")
+                st.success(f"¡Análisis completado! Se encontraron {len(soluciones_m)} formas matemáticas únicas.")
+                st.write(f"Ramas exploradas exitosamente: {exitos_m}")
                 
                 max_mostrar_m = min(15, len(soluciones_m))
                 if max_mostrar_m > 0:
                     st.write(f"Mostrando las primeras {max_mostrar_m} soluciones:")
-                    
                     for idx, sol in enumerate(soluciones_m[:max_mostrar_m], 1):
                         with st.expander(f"Ver Opción {idx}"):
                             for paso in sol:
                                 st.code(paso)
-                                
                     if len(soluciones_m) > 15:
-                        st.caption(f"... y {len(soluciones_m) - 15} combinaciones más que se han ocultado.")
+                        st.caption(f"... y {len(soluciones_m) - 15} combinaciones ocultas.")
