@@ -121,43 +121,117 @@ def resolver_cifras_motor(numeros_iniciales, objetivo):
     
     return list(soluciones_encontradas), mejor_aproximacion, mejor_diferencia, mejor_camino, exitos_brutos
 
-# --- 3. INTERFAZ GRÁFICA (Streamlit) ---
+# --- 3. CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(page_title="Juego de Cifras", page_icon="🔢", layout="centered")
 
 # ==========================================
-# 🧮 CALCULADORA LATERAL PLEGABLE
+# 🧮 CALCULADORA CLÁSICA LATERAL (DESPLEGABLE)
 # ==========================================
-with st.sidebar.expander("🧮 Calculadora de Ayuda", expanded=False):
-    st.write("Realiza tus operaciones auxiliares aquí:")
+
+# Inicializar estados en session_state para la calculadora
+if "calc_expr" not in st.session_state:
+    st.session_state.calc_expr = ""
+if "calc_ans" not in st.session_state:
+    st.session_state.calc_ans = 0
+if "mostrar_calc" not in st.session_state:
+    st.session_state.mostrar_calc = False
+if "calc_error" not in st.session_state:
+    st.session_state.calc_error = ""
+
+# Botón único en la esquina superior izquierda (Barra Lateral) para abrir/cerrar
+st.sidebar.markdown("### 🛠️ Herramientas")
+if st.sidebar.button("🧮 Calculadora Auxiliar", use_container_width=True):
+    st.session_state.mostrar_calc = not st.session_state.mostrar_calc
+
+# Renderizado de la calculadora si está activa
+if st.session_state.mostrar_calc:
+    st.sidebar.divider()
+    st.sidebar.subheader("🧮 Calculadora")
     
-    # Campo de texto para que el usuario escriba su cuenta (ej: 25 + 10 * 2)
-    # Usamos session_state para poder borrar la cuenta después
-    if "calc_input" not in st.session_state:
-        st.session_state.calc_input = ""
-        
-    def limpiar_calculadora():
-        st.session_state.calc_input = ""
-        
-    cuenta = st.text_input("Introduce la operación:", value=st.session_state.calc_input, key="calc_input")
+    # Campo de texto para ver o teclear directamente la operación
+    expr_teclado = st.sidebar.text_input(
+        "Pantalla:",
+        value=st.session_state.calc_expr,
+        key="pantalla_calc_input"
+    )
     
-    col_c1, col_c2 = st.columns(2)
-    with col_c1:
-        if st.button("🟰 Calcular", use_container_width=True):
-            if cuenta:
-                try:
-                    # Sustituimos 'x' por '*' por si el usuario usa la letra x para multiplicar
-                    cuenta_limpia = cuenta.replace("x", "*").replace("X", "*")
-                    # eval evalúa matemáticamente el string
-                    resultado = eval(cuenta_limpia)
-                    st.success(f"**Resultado: {resultado}**")
-                except ZeroDivisionError:
-                    st.error("⚠️ Error: División por cero.")
-                except Exception:
-                    st.error("⚠️ Error: Operación no válida.")
-                    
-    with col_c2:
-        if st.button("🗑️ Borrar", on_click=limpiar_calculadora, use_container_width=True):
-            pass
+    # Sincronizamos si el usuario editó manualmente por teclado
+    if expr_teclado != st.session_state.calc_expr:
+        st.session_state.calc_expr = expr_teclado
+        st.session_state.calc_error = ""
+
+    # Mensaje de error si la operación no es válida
+    if st.session_state.calc_error:
+        st.sidebar.error(st.session_state.calc_error)
+
+    # Funciones auxiliares para los botones de la calculadora
+    def pulsar_boton(simbolo):
+        st.session_state.calc_error = ""
+        st.session_state.calc_expr += str(simbolo)
+
+    def borrar_todo():
+        st.session_state.calc_error = ""
+        st.session_state.calc_expr = ""
+
+    def borrar_ultimo():
+        st.session_state.calc_error = ""
+        st.session_state.calc_expr = st.session_state.calc_expr[:-1]
+
+    def usar_ans():
+        st.session_state.calc_error = ""
+        st.session_state.calc_expr += str(st.session_state.calc_ans)
+
+    def ejecutar_calculo():
+        st.session_state.calc_error = ""
+        if not st.session_state.calc_expr:
+            return
+        try:
+            # Reemplazar símbolos comunes de multiplicación/división
+            expr_limpia = st.session_state.calc_expr.replace("x", "*").replace("X", "*").replace("÷", "/")
+            res = eval(expr_limpia)
+            
+            # Formatear si es entero
+            if isinstance(res, float) and res.is_integer():
+                res = int(res)
+                
+            st.session_state.calc_ans = res
+            st.session_state.calc_expr = str(res)
+        except ZeroDivisionError:
+            st.session_state.calc_error = "Error: División por 0"
+        except Exception:
+            st.session_state.calc_error = "Error: Operación no válida"
+
+    # Teclado físico/visual estilo calculadora clásica
+    col1, col2, col3, col4 = st.sidebar.columns(4)
+    
+    with col1:
+        st.button("C", on_click=borrar_todo, use_container_width=True, help="Borrar todo")
+        st.button("7", on_click=pulsar_boton, args=("7",), use_container_width=True)
+        st.button("4", on_click=pulsar_boton, args=("4",), use_container_width=True)
+        st.button("1", on_click=pulsar_boton, args=("1",), use_container_width=True)
+        st.button("0", on_click=pulsar_boton, args=("0",), use_container_width=True)
+
+    with col2:
+        st.button("⌫", on_click=borrar_ultimo, use_container_width=True, help="Borrar último")
+        st.button("8", on_click=pulsar_boton, args=("8",), use_container_width=True)
+        st.button("5", on_click=pulsar_boton, args=("5",), use_container_width=True)
+        st.button("2", on_click=pulsar_boton, args=("2",), use_container_width=True)
+        st.button(".", on_click=pulsar_boton, args=(".",), use_container_width=True)
+
+    with col3:
+        st.button("ANS", on_click=usar_ans, use_container_width=True, help="Insertar último resultado")
+        st.button("9", on_click=pulsar_boton, args=("9",), use_container_width=True)
+        st.button("6", on_click=pulsar_boton, args=("6",), use_container_width=True)
+        st.button("3", on_click=pulsar_boton, args=("3",), use_container_width=True)
+        st.button("=", on_click=ejecutar_calculo, type="primary", use_container_width=True)
+
+    with col4:
+        st.button("÷", on_click=pulsar_boton, args=("/",), use_container_width=True)
+        st.button("×", on_click=pulsar_boton, args=("*",), use_container_width=True)
+        st.button("-", on_click=pulsar_boton, args=("-",), use_container_width=True)
+        st.button("+", on_click=pulsar_boton, args=("+",), use_container_width=True)
+
+    st.sidebar.caption(f"Último resultado (ANS): **{st.session_state.calc_ans}**")
 
 # ==========================================
 # CUERPO PRINCIPAL
