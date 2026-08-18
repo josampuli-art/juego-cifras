@@ -125,12 +125,12 @@ def resolver_cifras_motor(numeros_iniciales, objetivo):
 st.set_page_config(page_title="Juego de Cifras", page_icon="🔢", layout="centered")
 
 # ==========================================
-# 🧮 CALCULADORA CLÁSICA LATERAL (DESPLEGABLE)
+# 🧮 CALCULADORA CLÁSICA LATERAL
 # ==========================================
 
-# Inicializar estados en session_state para la calculadora
-if "calc_expr" not in st.session_state:
-    st.session_state.calc_expr = ""
+# Inicializar variables de estado
+if "pantalla_calc_input" not in st.session_state:
+    st.session_state["pantalla_calc_input"] = ""
 if "calc_ans" not in st.session_state:
     st.session_state.calc_ans = 0
 if "mostrar_calc" not in st.session_state:
@@ -138,70 +138,59 @@ if "mostrar_calc" not in st.session_state:
 if "calc_error" not in st.session_state:
     st.session_state.calc_error = ""
 
-# Botón único en la esquina superior izquierda (Barra Lateral) para abrir/cerrar
+# Botón único en la barra lateral
 st.sidebar.markdown("### 🛠️ Herramientas")
 if st.sidebar.button("🧮 Calculadora Auxiliar", use_container_width=True):
     st.session_state.mostrar_calc = not st.session_state.mostrar_calc
 
-# Renderizado de la calculadora si está activa
+# Renderizado de la calculadora al hacer clic en el botón
 if st.session_state.mostrar_calc:
     st.sidebar.divider()
     st.sidebar.subheader("🧮 Calculadora")
-    
-    # Campo de texto para ver o teclear directamente la operación
-    expr_teclado = st.sidebar.text_input(
-        "Pantalla:",
-        value=st.session_state.calc_expr,
-        key="pantalla_calc_input"
-    )
-    
-    # Sincronizamos si el usuario editó manualmente por teclado
-    if expr_teclado != st.session_state.calc_expr:
-        st.session_state.calc_expr = expr_teclado
-        st.session_state.calc_error = ""
 
-    # Mensaje de error si la operación no es válida
-    if st.session_state.calc_error:
-        st.sidebar.error(st.session_state.calc_error)
-
-    # Funciones auxiliares para los botones de la calculadora
+    # Funciones para manejar los eventos de los botones
     def pulsar_boton(simbolo):
         st.session_state.calc_error = ""
-        st.session_state.calc_expr += str(simbolo)
+        st.session_state["pantalla_calc_input"] += str(simbolo)
 
     def borrar_todo():
         st.session_state.calc_error = ""
-        st.session_state.calc_expr = ""
+        st.session_state["pantalla_calc_input"] = ""
 
     def borrar_ultimo():
         st.session_state.calc_error = ""
-        st.session_state.calc_expr = st.session_state.calc_expr[:-1]
+        st.session_state["pantalla_calc_input"] = st.session_state["pantalla_calc_input"][:-1]
 
     def usar_ans():
         st.session_state.calc_error = ""
-        st.session_state.calc_expr += str(st.session_state.calc_ans)
+        st.session_state["pantalla_calc_input"] += str(st.session_state.calc_ans)
 
     def ejecutar_calculo():
         st.session_state.calc_error = ""
-        if not st.session_state.calc_expr:
+        expr = st.session_state["pantalla_calc_input"]
+        if not expr:
             return
         try:
-            # Reemplazar símbolos comunes de multiplicación/división
-            expr_limpia = st.session_state.calc_expr.replace("x", "*").replace("X", "*").replace("÷", "/")
+            expr_limpia = expr.replace("x", "*").replace("X", "*").replace("÷", "/")
             res = eval(expr_limpia)
             
-            # Formatear si es entero
             if isinstance(res, float) and res.is_integer():
                 res = int(res)
                 
             st.session_state.calc_ans = res
-            st.session_state.calc_expr = str(res)
+            st.session_state["pantalla_calc_input"] = str(res)
         except ZeroDivisionError:
             st.session_state.calc_error = "Error: División por 0"
         except Exception:
             st.session_state.calc_error = "Error: Operación no válida"
 
-    # Teclado físico/visual estilo calculadora clásica
+    # Campo visual directamente enlazado al estado de la calculadora
+    st.sidebar.text_input("Pantalla:", key="pantalla_calc_input")
+
+    if st.session_state.calc_error:
+        st.sidebar.error(st.session_state.calc_error)
+
+    # Distribución de botones
     col1, col2, col3, col4 = st.sidebar.columns(4)
     
     with col1:
