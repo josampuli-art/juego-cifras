@@ -125,7 +125,7 @@ def resolver_cifras_motor(numeros_iniciales, objetivo):
 st.set_page_config(page_title="Juego de Cifras", page_icon="🔢", layout="centered")
 
 # ==========================================
-# 🧮 CALCULADORA CLÁSICA LATERAL
+# 🧮 CALCULADORA CLÁSICA LATERAL CON HISTORIAL
 # ==========================================
 
 # Inicializar variables de estado
@@ -137,6 +137,10 @@ if "mostrar_calc" not in st.session_state:
     st.session_state.mostrar_calc = False
 if "calc_error" not in st.session_state:
     st.session_state.calc_error = ""
+if "calc_evaluado" not in st.session_state:
+    st.session_state.calc_evaluado = False
+if "historial_calc" not in st.session_state:
+    st.session_state.historial_calc = []
 
 # Botón único en la barra lateral
 st.sidebar.markdown("### 🛠️ Herramientas")
@@ -151,19 +155,36 @@ if st.session_state.mostrar_calc:
     # Funciones para manejar los eventos de los botones
     def pulsar_boton(simbolo):
         st.session_state.calc_error = ""
-        st.session_state["pantalla_calc_input"] += str(simbolo)
+        operadores = ["+", "-", "*", "/", "x", "X", "÷"]
+        
+        if st.session_state.calc_evaluado:
+            if simbolo in operadores:
+                # Si es un operador, continúa operando con el resultado anterior
+                st.session_state["pantalla_calc_input"] += str(simbolo)
+            else:
+                # Si es número/punto, borra el resultado anterior e inicia una cuenta nueva
+                st.session_state["pantalla_calc_input"] = str(simbolo)
+            st.session_state.calc_evaluado = False
+        else:
+            st.session_state["pantalla_calc_input"] += str(simbolo)
 
     def borrar_todo():
         st.session_state.calc_error = ""
         st.session_state["pantalla_calc_input"] = ""
+        st.session_state.calc_evaluado = False
 
     def borrar_ultimo():
         st.session_state.calc_error = ""
         st.session_state["pantalla_calc_input"] = st.session_state["pantalla_calc_input"][:-1]
+        st.session_state.calc_evaluado = False
 
     def usar_ans():
         st.session_state.calc_error = ""
-        st.session_state["pantalla_calc_input"] += str(st.session_state.calc_ans)
+        if st.session_state.calc_evaluado:
+            st.session_state["pantalla_calc_input"] = str(st.session_state.calc_ans)
+            st.session_state.calc_evaluado = False
+        else:
+            st.session_state["pantalla_calc_input"] += str(st.session_state.calc_ans)
 
     def ejecutar_calculo():
         st.session_state.calc_error = ""
@@ -179,12 +200,21 @@ if st.session_state.mostrar_calc:
                 
             st.session_state.calc_ans = res
             st.session_state["pantalla_calc_input"] = str(res)
+            st.session_state.calc_evaluado = True
+            
+            # Guardar en el historial de últimas cuentas (máximo 6)
+            registro = f"{expr} = {res}"
+            st.session_state.historial_calc.insert(0, registro)
+            st.session_state.historial_calc = st.session_state.historial_calc[:6]
+
         except ZeroDivisionError:
             st.session_state.calc_error = "Error: División por 0"
+            st.session_state.calc_evaluado = False
         except Exception:
             st.session_state.calc_error = "Error: Operación no válida"
+            st.session_state.calc_evaluado = False
 
-    # Campo visual directamente enlazado al estado de la calculadora
+    # Campo visual directamente enlazado al estado
     st.sidebar.text_input("Pantalla:", key="pantalla_calc_input")
 
     if st.session_state.calc_error:
@@ -221,6 +251,15 @@ if st.session_state.mostrar_calc:
         st.button("+", on_click=pulsar_boton, args=("+",), use_container_width=True)
 
     st.sidebar.caption(f"Último resultado (ANS): **{st.session_state.calc_ans}**")
+
+    # --- HISTORIAL DE ÚLTIMAS 6 CUENTAS ---
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("**📜 Últimas 6 cuentas:**")
+    if st.session_state.historial_calc:
+        for item in st.session_state.historial_calc:
+            st.sidebar.text(item)
+    else:
+        st.sidebar.caption("Aún no hay operaciones guardadas.")
 
 # ==========================================
 # CUERPO PRINCIPAL
